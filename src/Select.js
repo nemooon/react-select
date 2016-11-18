@@ -166,6 +166,7 @@ const Select = React.createClass({
 			isOpen: false,
 			isPseudoFocused: false,
 			required: false,
+			imeInputting: false,
 		};
 	},
 
@@ -443,10 +444,37 @@ const Select = React.createClass({
 		this.setState(onBlurredState);
 	},
 
+	handleInputKeyDown (event) {
+		if (this.state.imeInputting == false && event.keyCode == 229) {
+			this.setState({ imeInputting: true });
+		}
+	},
+
+	handleInputKeyUp (event) {
+		if (this.state.imeInputting == true && event.keyCode == 13) {
+			let newInputValue = event.target.value;
+
+			if (this.props.onInputChange) {
+				let nextState = this.props.onInputChange(newInputValue);
+				// Note: != used deliberately here to catch undefined and null
+				if (nextState != null && typeof nextState !== 'object') {
+					newInputValue = '' + nextState;
+				}
+			}
+
+			this.setState({
+				isOpen: true,
+				isPseudoFocused: false,
+				inputValue: newInputValue,
+				imeInputting: false
+			});
+		}
+	},
+
 	handleInputChange (event) {
 		let newInputValue = event.target.value;
 
-		if (this.state.inputValue !== event.target.value && this.props.onInputChange) {
+		if (this.state.imeInputting == false && this.state.inputValue !== event.target.value && this.props.onInputChange) {
 			let nextState = this.props.onInputChange(newInputValue);
 			// Note: != used deliberately here to catch undefined and null
 			if (nextState != null && typeof nextState !== 'object') {
@@ -846,6 +874,8 @@ const Select = React.createClass({
 			className: className,
 			tabIndex: this.props.tabIndex,
 			onBlur: this.handleInputBlur,
+			onKeyDown: this.handleInputKeyDown,
+			onKeyUp: this.handleInputKeyUp,
 			onChange: this.handleInputChange,
 			onFocus: this.handleInputFocus,
 			ref: ref => this.input = ref,
